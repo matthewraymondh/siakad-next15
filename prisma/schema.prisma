@@ -1,0 +1,38 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Mahasiswa {
+  id     Int    @id @default(autoincrement())
+  nim    String @unique
+  nama   String
+  ipk    Float
+  sksMax Int
+
+  // Tambahkan relasi ke model Krs
+  krs Krs[]
+}
+
+model MataKuliah {
+  id     Int    @id @default(autoincrement())
+  kodeMk String @unique
+  namaMk String
+  sks    Int
+
+  // Tambahkan relasi ke model Krs
+  krs Krs[]
+}
+
+model Krs {
+  id           Int @id @default(autoincrement())
+  mahasiswaId  Int
+  mataKuliahId Int
+
+  Mahasiswa  Mahasiswa  @relation(fields: [mahasiswaId], references: [id])
+  MataKuliah MataKuliah @relation(fields: [mataKuliahId], references: [id])
+}
