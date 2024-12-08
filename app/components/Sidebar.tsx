@@ -21,7 +21,7 @@ const Sidebar = () => {
   }, [pathname]); // Re-run the effect whenever the pathname changes
 
   return (
-    <div className="w-64 h-screen bg-white shadow-lg rounded-md p-4 space-y-6">
+    <div className="w-64 h-screen bg-congress-blue-200 shadow-lg rounded-md p-4 space-y-6">
       {/* College Logo and Name */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="w-10 h-10 bg-gray-200 rounded-full"></div>{" "}
@@ -34,8 +34,8 @@ const Sidebar = () => {
         <div
           className={`flex items-center space-x-4 p-4 text-lg transition-all duration-300 rounded-md ${
             active === "input-mahasiswa"
-              ? "bg-teal-600 text-white"
-              : "hover:bg-teal-100 text-gray-800"
+              ? "bg-congress-blue-600 text-white"
+              : "hover:bg-congress-blue-100 text-gray-800"
           }`}
         >
           <FaUserGraduate className="text-xl" />
@@ -46,8 +46,8 @@ const Sidebar = () => {
         <div
           className={`flex items-center space-x-4 p-4 text-lg transition-all duration-300 rounded-md ${
             active === "input-mata-kuliah"
-              ? "bg-teal-600 text-white"
-              : "hover:bg-teal-100 text-gray-800"
+              ? "bg-congress-blue-600 text-white"
+              : "hover:bg-congress-blue-100 text-gray-800"
           }`}
         >
           <FaBook className="text-xl" />

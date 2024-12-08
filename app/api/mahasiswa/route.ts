@@ -88,9 +88,10 @@ export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const mahasiswaId = parseInt(params.id);
+  const mahasiswaId = parseInt(params.id, 10); // Convert the ID to an integer
 
   try {
+    // Delete the mahasiswa using Prisma
     await prisma.mahasiswa.delete({
       where: { id: mahasiswaId },
     });

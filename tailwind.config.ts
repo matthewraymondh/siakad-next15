@@ -6,7 +6,23 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        "congress-blue": {
+          "50": "#edf9ff",
+          "100": "#d6f1ff",
+          "200": "#b6e8ff",
+          "300": "#83dbff",
+          "400": "#49c5ff",
+          "500": "#1fa5ff",
+          "600": "#0787ff",
+          "700": "#016ff4",
+          "800": "#0857c5",
+          "900": "#0d4891",
+          "950": "#0e2f5d",
+        },
+      },
+    },
   },
   plugins: [],
 };

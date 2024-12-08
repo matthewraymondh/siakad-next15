@@ -1,20 +1,27 @@
-// app/input-mata-kuliah/page.tsx
-
+import Footer from "../components/Footer";
 import MataKuliahForm from "../components/MataKuliahForm";
+import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
-const InputMataKuliahPage = () => {
+const Layout = () => {
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="flex flex-col min-h-screen">
+      {/* Navbar at the top */}
+      <Navbar />
 
-      {/* Content for input Mata Kuliah */}
-      <div className="flex-1 p-6">
-        <MataKuliahForm />
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main content */}
+        <div className="flex-1 p-6">
+          {/* Main content like Mahasiswa goes here */}
+          <MataKuliahForm />
+        </div>
       </div>
+      <Footer />
     </div>
   );
 };
 
-export default InputMataKuliahPage;
+export default Layout;

@@ -1,6 +1,7 @@
 "use client"; // Mark this as a client component
 
 import { useState, useEffect } from "react";
+import Layout from "../page";
 
 type MataKuliah = {
   id: number;
@@ -62,6 +63,7 @@ const MataKuliahForm = () => {
   };
 
   return (
+    // <Layout>
     <div className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
       <h2 className="text-2xl font-bold mb-6">Input Mata Kuliah</h2>
       <form onSubmit={handleSubmit}>
@@ -119,6 +121,7 @@ const MataKuliahForm = () => {
         <p>No courses available.</p>
       )}
     </div>
+    /* </Layout> */
   );
 };
 

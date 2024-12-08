@@ -1,47 +1,50 @@
-// "use client"; // Mark this as a client component
+"use client";
 
-// import { useState } from "react";
-// import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa"; // Icons for profile and hamburger menu
+import Image from "next/image";
+import Link from "next/link";
 
-// const Navbar = () => {
-//   const [isMenuOpen, setIsMenuOpen] = useState(false); // Track menu state for mobile
+export default function Navbar() {
+  return (
+    <div className="bg-congress-blue-800 shadow-md">
+      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+        {/* Brand/Logo */}
+        <div className="flex items-center space-x-3">
+          {/* Image */}
+          <Image
+            src="/Logo-Web-Udinus-Putih.png" // Replace with the path to your image
+            alt="Logo"
+            // className="h-8 w-8"
+            width={400} // Specify width
+            height={32} // Specify height
+            layout="intrinsic"
+          />
+          {/* Text */}
+          {/* <h1 className="text-xl font-bold text-congress-blue-50">SiAkad</h1> */}
+        </div>
 
-//   const toggleMenu = () => {
-//     setIsMenuOpen(!isMenuOpen);
-//   };
-
-//   return (
-//     <nav className="bg-white shadow-lg p-4">
-//       <div className="max-w-7xl mx-auto flex justify-between items-center">
-//         {/* Profile Icon */}
-//         <div className="relative">
-//           <button onClick={toggleMenu}>
-//             <FaBars className="text-2xl cursor-pointer text-gray-800 hover:text-teal-600" />
-//           </button>
-//         </div>
-
-//         {/* Hamburger Menu (Mobile Only) */}
-//         {isMenuOpen && (
-//           <div className="absolute top-16 right-0 bg-white shadow-lg rounded-md p-4 space-y-4 md:hidden">
-//             <button
-//               className="text-gray-800 hover:text-teal-600"
-//               onClick={toggleMenu}
-//             >
-//               <FaTimes className="text-2xl" />
-//             </button>
-//             <div className="text-gray-800">Menu Item 1</div>
-//             <div className="text-gray-800">Menu Item 2</div>
-//             <div className="text-gray-800">Logout</div>
-//           </div>
-//         )}
-
-//         {/* Profile Icon */}
-//         <div className="flex items-center">
-//           <FaUserCircle className="text-2xl cursor-pointer text-gray-800 hover:text-teal-600" />
-//         </div>
-//       </div>
-//     </nav>
-//   );
-// };
-
-// export default Navbar;
+        {/* Navigation Links */}
+        <nav className="flex space-x-6">
+          {/* Uncomment or add more links as needed */}
+          {/* <Link
+            href="/input-mahasiswa"
+            className="text-congress-blue-50 hover:text-congress-blue-200 font-semibold"
+          >
+            Input Mahasiswa
+          </Link>
+          <Link
+            href="/input-mata-kuliah"
+            className="text-congress-blue-50 hover:text-congress-blue-200 font-semibold"
+          >
+            Input Mata Kuliah
+          </Link> */}
+          <Link
+            href="/logout"
+            className="text-congress-blue-50 hover:text-red-300 font-semibold"
+          >
+            Logout
+          </Link>
+        </nav>
+      </div>
+    </div>
+  );
+}

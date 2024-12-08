@@ -1,12 +1,13 @@
 import Navbar from "./components/Navbar"; // Adjust path as needed
 import Sidebar from "./components/Sidebar"; // Adjust path as needed
 import Mahasiswa from "./components/Mahasiswa"; // Your main content component
+import Footer from "./components/Footer";
 
 const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navbar at the top */}
-      {/* <Navbar /> */}
+      <Navbar />
 
       <div className="flex flex-1">
         {/* Sidebar */}
@@ -18,6 +19,7 @@ const Layout = () => {
           <Mahasiswa />
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

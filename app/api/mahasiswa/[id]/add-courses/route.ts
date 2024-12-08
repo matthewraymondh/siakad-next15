@@ -8,29 +8,55 @@ export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const mahasiswaId = parseInt(params.id); // Extract mahasiswa ID from URL parameters
-  const { mataKuliahIds } = await req.json(); // Extract course IDs from request body
+  const mahasiswaId = parseInt(params.id);
+  const { mataKuliahIds } = await req.json();
 
   try {
-    // Create Krs records to associate Mahasiswa with MataKuliah (courses)
-    const krsEntries = await prisma.krs.createMany({
-      data: mataKuliahIds.map((mataKuliahId: number) => ({
+    // Check for duplicate courses
+    const existingKrs = await prisma.krs.findMany({
+      where: {
+        mahasiswaId,
+        mataKuliahId: { in: mataKuliahIds },
+      },
+    });
+
+    const existingCourseIds = existingKrs.map((krs) => krs.mataKuliahId);
+    const newCourseIds = mataKuliahIds.filter(
+      (id: number) => !existingCourseIds.includes(id)
+    );
+
+    if (newCourseIds.length === 0) {
+      return new Response(
+        JSON.stringify({
+          message: "All selected courses are already assigned.",
+        }),
+        { status: 400 }
+      );
+    }
+
+    // Create Krs records for new courses only
+    await prisma.krs.createMany({
+      data: newCourseIds.map((mataKuliahId: number) => ({
         mahasiswaId,
         mataKuliahId,
       })),
     });
 
-    // Fetch updated Mahasiswa data with the newly added courses
+    // Fetch updated Mahasiswa with new KRS details
     const mahasiswa = await prisma.mahasiswa.findUnique({
       where: { id: mahasiswaId },
-      include: { krs: { include: { MataKuliah: true } } }, // Include MataKuliah (course) details
+      include: { krs: { include: { MataKuliah: true } } },
     });
 
     return new Response(
-      JSON.stringify({ message: "Courses added to Mahasiswa", mahasiswa }),
+      JSON.stringify({
+        message: `Added ${newCourseIds.length} new courses to Mahasiswa.`,
+        mahasiswa,
+      }),
       { status: 201 }
     );
   } catch (error) {
+    console.error("Error adding courses:", error);
     return new Response(
       JSON.stringify({ message: "Error adding courses", error }),
       { status: 500 }

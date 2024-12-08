@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable"; // Import the jsPDF AutoTable plugin
+import Layout from "../page";
+// import Link from "next/link"; // Import Link for navigation
 
 // Types for Mahasiswa and MataKuliah
 type MataKuliah = {
@@ -49,6 +51,11 @@ const Mahasiswa = () => {
     number | null
   >(null);
 
+  // States for SKS modal
+  const [isSksModalOpen, setIsSksModalOpen] = useState(false); // SKS modal visibility
+  const [selectedMahasiswaForSks, setSelectedMahasiswaForSks] =
+    useState<Mahasiswa | null>(null); // Selected mahasiswa for SKS modal
+
   useEffect(() => {
     // Fetch Mahasiswa data along with Krs (courses)
     const fetchMahasiswaData = async () => {
@@ -72,11 +79,16 @@ const Mahasiswa = () => {
   const handleSubmitMahasiswa = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const ipk = parseFloat(formData.ipk);
+
+    // Automatically determine SKS Max based on IPK
+    const sksMax = ipk < 3 ? 20 : 24;
+
     const newMahasiswa = {
       nim: formData.nim,
       nama: formData.nama,
-      ipk: parseFloat(formData.ipk),
-      sksMax: parseInt(formData.sksMax),
+      ipk,
+      sksMax,
     };
 
     const response = await fetch("/api/mahasiswa", {
@@ -136,19 +148,24 @@ const Mahasiswa = () => {
 
   // Delete Mahasiswa
   const handleDeleteMahasiswa = async (mahasiswaId: number) => {
-    const response = await fetch(`/api/mahasiswa/${mahasiswaId}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/mahasiswa/${mahasiswaId}`, {
+        method: "DELETE",
+      });
 
-    const result = await response.json();
-
-    if (response.ok) {
-      alert("Mahasiswa deleted successfully!");
-      setMahasiswaList((prev) =>
-        prev.filter((mahasiswa) => mahasiswa.id !== mahasiswaId)
-      );
-    } else {
-      alert(result.message || "Failed to delete mahasiswa");
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || "Mahasiswa deleted successfully!");
+        setMahasiswaList((prev) =>
+          prev.filter((mahasiswa) => mahasiswa.id !== mahasiswaId)
+        );
+      } else {
+        const errorResult = await response.json();
+        alert(errorResult.message || "Failed to delete mahasiswa");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while deleting mahasiswa");
     }
   };
 
@@ -190,8 +207,14 @@ const Mahasiswa = () => {
     const mahasiswa = mahasiswaList.find((mhs) => mhs.id === mahasiswaId);
     if (!mahasiswa) return;
 
-    if (totalSKS > mahasiswa.sksMax) {
-      alert("Total SKS exceeds the allowed limit!");
+    // Filter out duplicate courses in the frontend
+    const existingCourseIds = mahasiswa.krs.map((krs) => krs.MataKuliah.id);
+    const uniqueCourses = selectedCourses.filter(
+      (course) => !existingCourseIds.includes(course.id)
+    );
+
+    if (uniqueCourses.length === 0) {
+      alert("All selected courses are already assigned to this student.");
       return;
     }
 
@@ -201,7 +224,7 @@ const Mahasiswa = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        mataKuliahIds: selectedCourses.map((course) => course.id),
+        mataKuliahIds: uniqueCourses.map((course) => course.id),
       }),
     });
 
@@ -219,7 +242,7 @@ const Mahasiswa = () => {
                 ...mhs,
                 krs: [
                   ...mhs.krs,
-                  ...selectedCourses.map((course) => ({ MataKuliah: course })),
+                  ...uniqueCourses.map((course) => ({ MataKuliah: course })),
                 ],
               }
             : mhs
@@ -340,7 +363,52 @@ const Mahasiswa = () => {
     setTotalSKS(0);
   };
 
+  // Open SKS modal (Pop-Up)
+  const openSksModal = (mahasiswa: Mahasiswa) => {
+    setSelectedMahasiswaForSks(mahasiswa);
+    setIsSksModalOpen(true); // Open modal
+  };
+
+  // Close SKS modal
+  const closeSksModal = () => {
+    setIsSksModalOpen(false); // Close modal
+    setSelectedMahasiswaForSks(null); // Clear selected mahasiswa
+  };
+
+  // New Functionality: Delete KRS for a specific course
+  const handleDeleteKrs = async (mahasiswaId: number, mataKuliahId: number) => {
+    try {
+      const response = await fetch(
+        `/api/mahasiswa/${mahasiswaId}/delete-krs/${mataKuliahId}`,
+        { method: "DELETE" }
+      );
+
+      if (response.ok) {
+        alert("KRS deleted successfully!");
+        setMahasiswaList((prev) =>
+          prev.map((mahasiswa) =>
+            mahasiswa.id === mahasiswaId
+              ? {
+                  ...mahasiswa,
+                  krs: mahasiswa.krs.filter(
+                    (krs) => krs.MataKuliah.id !== mataKuliahId
+                  ),
+                }
+              : mahasiswa
+          )
+        );
+      } else {
+        const errorResult = await response.json();
+        alert(errorResult.message || "Failed to delete KRS");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while deleting KRS");
+    }
+  };
+
   return (
+    // <Layout>
     <div className="container mx-auto mt-10">
       <h1 className="text-2xl font-bold mb-5">Input Mahasiswa</h1>
       <form
@@ -354,6 +422,7 @@ const Mahasiswa = () => {
           onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
           className="block w-full p-2 mb-4 border rounded-lg"
         />
+
         <label className="block mb-2 font-medium">Nama</label>
         <input
           type="text"
@@ -361,21 +430,31 @@ const Mahasiswa = () => {
           onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
           className="block w-full p-2 mb-4 border rounded-lg"
         />
+
         <label className="block mb-2 font-medium">IPK</label>
         <input
           type="number"
           step="0.01"
           value={formData.ipk}
-          onChange={(e) => setFormData({ ...formData, ipk: e.target.value })}
+          onChange={(e) => {
+            const ipk = e.target.value;
+            setFormData({
+              ...formData,
+              ipk,
+              sksMax: ipk && parseFloat(ipk) < 3 ? "20" : "24", // Automatically update SKS Max
+            });
+          }}
           className="block w-full p-2 mb-4 border rounded-lg"
         />
+
         <label className="block mb-2 font-medium">SKS Max</label>
         <input
           type="number"
           value={formData.sksMax}
-          onChange={(e) => setFormData({ ...formData, sksMax: e.target.value })}
-          className="block w-full p-2 mb-4 border rounded-lg"
+          readOnly // SKS Max is read-only
+          className="block w-full p-2 mb-4 border rounded-lg bg-gray-100 cursor-not-allowed"
         />
+
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded-lg"
@@ -472,11 +551,23 @@ const Mahasiswa = () => {
                 className="border p-2 mb-4 rounded-lg w-full"
               >
                 <option value="">Select Course</option>
-                {mataKuliahList.map((mataKuliah) => (
-                  <option key={mataKuliah.id} value={mataKuliah.id}>
-                    {mataKuliah.namaMk} ({mataKuliah.sks} SKS)
-                  </option>
-                ))}
+                {mataKuliahList.map((mataKuliah) => {
+                  const currentMahasiswa = mahasiswaList.find(
+                    (mhs) => mhs.id === selectedMahasiswaForCourse
+                  );
+
+                  return (
+                    <option
+                      key={mataKuliah.id}
+                      value={mataKuliah.id}
+                      disabled={currentMahasiswa?.krs.some(
+                        (krs) => krs.MataKuliah.id === mataKuliah.id
+                      )}
+                    >
+                      {mataKuliah.namaMk} ({mataKuliah.sks} SKS)
+                    </option>
+                  );
+                })}
               </select>
 
               <h3 className="text-xl font-semibold">Selected Courses</h3>
@@ -536,32 +627,94 @@ const Mahasiswa = () => {
                 <button
                   onClick={() => openEditModal(mahasiswa)}
                   className="bg-yellow-500 text-white px-4 py-2 rounded-lg mr-2"
+                  key={`edit-${mahasiswa.id}`} // Unique key for Edit button
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDeleteMahasiswa(mahasiswa.id)}
                   className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                  key={`delete-${mahasiswa.id}`} // Unique key for Delete button
                 >
                   Delete
                 </button>
                 <button
                   onClick={() => openCourseModal(mahasiswa.id)}
                   className="bg-blue-500 text-white px-4 py-2 rounded-lg ml-2"
+                  key={`course-${mahasiswa.id}`} // Unique key for Course Selection button
                 >
                   Select Courses
                 </button>
                 <button
-                  onClick={() => generateKRS(mahasiswa)}
+                  onClick={() => openSksModal(mahasiswa)} // Open SKS Modal
                   className="bg-green-500 text-white px-4 py-2 rounded-lg ml-2"
+                  key={`view-sks-${mahasiswa.id}`} // Unique key for View SKS button
                 >
-                  Print KRS
+                  View SKS
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* SKS Modal (Pop-up) */}
+      {isSksModalOpen && selectedMahasiswaForSks && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-96">
+            <h2 className="text-xl font-bold mb-4">
+              SKS Details for {selectedMahasiswaForSks.nama}
+            </h2>
+            <table className="min-w-full table-auto border-collapse border border-gray-200">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-3">No</th>
+                  <th className="border p-3">Course Name</th>
+                  <th className="border p-3">SKS</th>
+                  <th className="border p-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedMahasiswaForSks.krs.map((krs, index) => (
+                  <tr key={krs.MataKuliah.id}>
+                    <td className="border p-3">{index + 1}</td>
+                    <td className="border p-3">{krs.MataKuliah.namaMk}</td>
+                    <td className="border p-3">{krs.MataKuliah.sks}</td>
+                    <td className="border p-3">
+                      <button
+                        onClick={() =>
+                          handleDeleteKrs(
+                            selectedMahasiswaForSks.id,
+                            krs.MataKuliah.id
+                          )
+                        }
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={closeSksModal} // Close the modal
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+              >
+                Close
+              </button>
+              {/* Print KRS Button */}
+              <button
+                onClick={() => generateKRS(selectedMahasiswaForSks)}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg"
+              >
+                Print KRS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
