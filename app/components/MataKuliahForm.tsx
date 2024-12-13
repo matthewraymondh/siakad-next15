@@ -1,7 +1,8 @@
 "use client"; // Mark this as a client component
 
 import { useState, useEffect } from "react";
-import Layout from "../page";
+// import Layout from "../page";
+import { toast } from "sonner";
 
 type MataKuliah = {
   id: number;
@@ -39,29 +40,36 @@ const MataKuliahForm = () => {
       sks: parseInt(formData.sks),
     };
 
-    const response = await fetch("/api/mataKuliah", {
-      method: "POST", // Send POST request to add the new course
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newCourse),
-    });
+    try {
+      const response = await fetch("/api/mataKuliah", {
+        method: "POST", // Send POST request to add the new course
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newCourse),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (response.ok) {
-      setFormData({ kodeMk: "", namaMk: "", sks: "" });
+      if (response.ok) {
+        setFormData({ kodeMk: "", namaMk: "", sks: "" });
 
-      // Fetch updated list of MataKuliah after adding a new course
-      const updatedListResponse = await fetch("/api/mataKuliah");
-      const updatedListData = await updatedListResponse.json();
-      setMataKuliahList(updatedListData.mataKuliah);
-      alert(result.message);
-    } else {
-      alert(result.message || "Failed to add course");
+        // Fetch updated list of MataKuliah after adding a new course
+        const updatedListResponse = await fetch("/api/mataKuliah");
+        const updatedListData = await updatedListResponse.json();
+        setMataKuliahList(updatedListData.mataKuliah);
+
+        toast.success(result.message || "Course added successfully!");
+      } else {
+        toast.error(result.message || "Failed to add course");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(
+        "An error occurred while adding the course. Please try again."
+      );
     }
   };
-
   return (
     // <Layout>
     <div className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">

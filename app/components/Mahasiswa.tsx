@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable"; // Import the jsPDF AutoTable plugin
-import Layout from "../page";
 import { toast } from "sonner";
 // import Link from "next/link"; // Import Link for navigation
 
@@ -424,14 +423,13 @@ const Mahasiswa = () => {
         { method: "DELETE" }
       );
 
-      console.log("Response Status:", response.status);
-
-      // Check if the response has content before parsing it as JSON
       if (response.ok) {
         const responseBody = await response.json();
-        console.log("Response Body:", responseBody);
 
+        // Notify success using Sonner
         toast.success("KRS deleted successfully!");
+
+        // Update mahasiswa list after KRS deletion
         setMahasiswaList((prev) =>
           prev.map((mahasiswa) =>
             mahasiswa.id === mahasiswaId
@@ -444,13 +442,34 @@ const Mahasiswa = () => {
               : mahasiswa
           )
         );
+
+        // Recalculate and update total SKS after deletion
+        const updatedMahasiswa = mahasiswaList.find(
+          (mhs) => mhs.id === mahasiswaId
+        );
+
+        if (updatedMahasiswa) {
+          const updatedSKS = updatedMahasiswa.krs.reduce(
+            (total, krs) => total + krs.MataKuliah.sks,
+            0
+          );
+
+          setSelectedMahasiswaForSks({
+            ...updatedMahasiswa,
+            totalSks: updatedSKS,
+          });
+        }
       } else {
-        const errorResult = await response.text(); // Use text() instead of json() to avoid empty body errors
+        const errorResult = await response.text();
         console.error("Server Error:", errorResult);
+
+        // Notify error using Sonner
         toast.error(errorResult || "Failed to delete KRS. Please try again.");
       }
     } catch (error) {
       console.error("Client Error:", error);
+
+      // Notify error using Sonner
       toast.error("An error occurred while deleting KRS. Please try again.");
     }
   };
