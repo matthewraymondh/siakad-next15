@@ -1,7 +1,10 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { AuthProvider } from "./context/AuthContext";
 
+// Define the fonts
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -24,10 +27,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // Server-side layout for Next.js with required html and body tags
     <html lang="en">
+      <head />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Wrap children with AuthProvider */}
         {children}
       </body>
     </html>

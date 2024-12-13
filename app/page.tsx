@@ -2,10 +2,14 @@ import Navbar from "./components/Navbar"; // Adjust path as needed
 import Sidebar from "./components/Sidebar"; // Adjust path as needed
 import Mahasiswa from "./components/Mahasiswa"; // Your main content component
 import Footer from "./components/Footer";
+import { Toaster } from "sonner";
 
 const Layout = () => {
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Toast notifications */}
+      <Toaster richColors />
+
       {/* Navbar at the top */}
       <Navbar />
 

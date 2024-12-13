@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable"; // Import the jsPDF AutoTable plugin
 import Layout from "../page";
+import { toast } from "sonner";
 // import Link from "next/link"; // Import Link for navigation
 
 // Types for Mahasiswa and MataKuliah
@@ -91,26 +92,32 @@ const Mahasiswa = () => {
       sksMax,
     };
 
-    const response = await fetch("/api/mahasiswa", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newMahasiswa),
-    });
+    try {
+      const response = await fetch("/api/mahasiswa", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newMahasiswa),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (response.ok) {
-      setFormData({ nim: "", nama: "", ipk: "", sksMax: "" });
-      setMahasiswaList((prev) => [...prev, result.mahasiswa]);
-      alert(result.message);
-    } else {
-      alert(result.message || "Failed to add mahasiswa");
+      if (response.ok) {
+        setFormData({ nim: "", nama: "", ipk: "", sksMax: "" });
+        setMahasiswaList((prev) => [...prev, result.mahasiswa]);
+        toast.success(result.message || "Mahasiswa successfully added!");
+      } else {
+        toast.error(result.message || "Failed to add mahasiswa.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("An unexpected error occurred while adding mahasiswa.");
     }
   };
 
   // Update Mahasiswa
+
   const handleUpdateMahasiswa = async () => {
     if (editingMahasiswaId === null) return;
 
@@ -121,51 +128,60 @@ const Mahasiswa = () => {
       sksMax: parseInt(formData.sksMax),
     };
 
-    const response = await fetch(`/api/mahasiswa/${editingMahasiswaId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedData),
-    });
+    try {
+      const response = await fetch(`/api/mahasiswa/${editingMahasiswaId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (response.ok) {
-      alert("Mahasiswa updated successfully!");
-      setMahasiswaList((prev) =>
-        prev.map((mahasiswa) =>
-          mahasiswa.id === editingMahasiswaId
-            ? { ...mahasiswa, ...updatedData }
-            : mahasiswa
-        )
-      );
-      closeModal();
-    } else {
-      alert(result.message || "Failed to update mahasiswa");
+      if (response.ok) {
+        toast.success(result.message || "Mahasiswa updated successfully!");
+        setMahasiswaList((prev) =>
+          prev.map((mahasiswa) =>
+            mahasiswa.id === editingMahasiswaId
+              ? { ...mahasiswa, ...updatedData }
+              : mahasiswa
+          )
+        );
+        closeModal();
+      } else {
+        toast.error(result.message || "Failed to update mahasiswa.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("An error occurred while updating mahasiswa.");
     }
   };
 
   // Delete Mahasiswa
   const handleDeleteMahasiswa = async (mahasiswaId: number) => {
     try {
+      console.log(`Deleting Mahasiswa ID: ${mahasiswaId}`);
       const response = await fetch(`/api/mahasiswa/${mahasiswaId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message || "Mahasiswa deleted successfully!");
         setMahasiswaList((prev) =>
           prev.filter((mahasiswa) => mahasiswa.id !== mahasiswaId)
         );
+        toast.success(result.message || "Mahasiswa deleted successfully!");
       } else {
         const errorResult = await response.json();
-        alert(errorResult.message || "Failed to delete mahasiswa");
+        toast.error(errorResult.message || "Failed to delete Mahasiswa.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred while deleting mahasiswa");
+      toast.error("An unexpected error occurred while deleting Mahasiswa.");
     }
   };
 
@@ -205,7 +221,16 @@ const Mahasiswa = () => {
   // Add courses to Mahasiswa
   const handleAddCoursesToMahasiswa = async (mahasiswaId: number) => {
     const mahasiswa = mahasiswaList.find((mhs) => mhs.id === mahasiswaId);
-    if (!mahasiswa) return;
+
+    // Ensure mahasiswa exists and has an initialized krs array
+    if (!mahasiswa) {
+      toast.error("Mahasiswa not found.");
+      return;
+    }
+
+    if (!Array.isArray(mahasiswa.krs)) {
+      mahasiswa.krs = []; // Initialize `krs` as an empty array if undefined
+    }
 
     // Filter out duplicate courses in the frontend
     const existingCourseIds = mahasiswa.krs.map((krs) => krs.MataKuliah.id);
@@ -214,75 +239,82 @@ const Mahasiswa = () => {
     );
 
     if (uniqueCourses.length === 0) {
-      alert("All selected courses are already assigned to this student.");
+      toast.info("All selected courses are already assigned to this student.");
       return;
     }
 
-    const response = await fetch(`/api/mahasiswa/${mahasiswaId}/add-courses`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        mataKuliahIds: uniqueCourses.map((course) => course.id),
-      }),
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      alert(result.message);
-      setSelectedCourses([]);
-      setTotalSKS(0);
-      setRemainingSKS(0);
-      setMahasiswaList((prev) =>
-        prev.map((mhs) =>
-          mhs.id === mahasiswaId
-            ? {
-                ...mhs,
-                krs: [
-                  ...mhs.krs,
-                  ...uniqueCourses.map((course) => ({ MataKuliah: course })),
-                ],
-              }
-            : mhs
-        )
+    try {
+      const response = await fetch(
+        `/api/mahasiswa/${mahasiswaId}/add-courses`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mataKuliahIds: uniqueCourses.map((course) => course.id),
+          }),
+        }
       );
-      closeCourseModal();
-    } else {
-      alert(result.message || "Failed to add courses");
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(result.message || "Courses added successfully!");
+
+        // Update the mahasiswa list with the new courses
+        setSelectedCourses([]);
+        setTotalSKS(0);
+        setRemainingSKS(0);
+        setMahasiswaList((prev) =>
+          prev.map((mhs) =>
+            mhs.id === mahasiswaId
+              ? {
+                  ...mhs,
+                  krs: [
+                    ...mhs.krs,
+                    ...uniqueCourses.map((course) => ({ MataKuliah: course })),
+                  ],
+                }
+              : mhs
+          )
+        );
+        closeCourseModal();
+      } else {
+        toast.error(result.message || "Failed to add courses");
+      }
+    } catch (error) {
+      console.error("Error adding courses:", error);
+      toast.error("An error occurred while adding courses.");
     }
   };
 
-  // Generate Prettier KRS PDF
   const generateKRS = (mahasiswa: Mahasiswa) => {
     const doc = new jsPDF();
 
     // Set document margins and font
-    const margin = 10;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(14);
+    const margin = 15;
+    doc.setFont("times", "normal");
+    doc.setFontSize(12);
 
     // Title of the document
-    doc.setFontSize(18);
-    doc.text(`Kartu Rencana Studi (KRS)`, margin, 20);
-    doc.setFontSize(14);
-    doc.text(`NIM: ${mahasiswa.nim}`, margin, 30);
-    doc.text(`Nama: ${mahasiswa.nama}`, margin, 40);
-    doc.text(`IPK: ${mahasiswa.ipk}`, margin, 50);
-    doc.text(`SKS Max: ${mahasiswa.sksMax}`, margin, 60);
-
-    let yOffset = 75; // Start position for the courses table
-
-    // Draw a horizontal line for separation
-    doc.setLineWidth(0.5);
-    doc.line(margin, yOffset - 2, 200 - margin, yOffset - 2);
-
-    // Table Header
-    yOffset += 10;
+    doc.setFontSize(20);
+    doc.setFont("times", "bold");
+    doc.text("Kartu Rencana Studi (KRS)", 105, 20, { align: "center" });
     doc.setFontSize(12);
-    doc.text("Courses", margin, yOffset);
-    yOffset += 10;
+    doc.setFont("times", "normal");
+    doc.text(`NIM: ${mahasiswa.nim}`, margin, 40);
+    doc.text(`Nama: ${mahasiswa.nama}`, margin, 50);
+    doc.text(`IPK: ${mahasiswa.ipk}`, margin, 60);
+    doc.text(`SKS Max: ${mahasiswa.sksMax}`, margin, 70);
+
+    let yOffset = 85; // Start position for the courses table
+
+    // Calculate total SKS
+    const totalSKS = mahasiswa.krs.reduce(
+      (sum, krs) => sum + krs.MataKuliah.sks,
+      0
+    );
 
     // Table Body using autoTable
     doc.autoTable({
@@ -294,26 +326,29 @@ const Mahasiswa = () => {
         krs.MataKuliah.sks,
       ]),
       margin: { left: margin, right: margin },
-      theme: "grid", // Use grid style for the table
+      theme: "striped",
       styles: {
-        fontSize: 12,
-        cellPadding: 3,
+        fontSize: 11,
+        cellPadding: 4,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1,
       },
       headStyles: {
-        fillColor: [22, 160, 133], // Green color for header
-        textColor: [255, 255, 255], // White text in header
-        fontSize: 13,
+        fillColor: [54, 57, 73], // Dark academic blue
+        textColor: [255, 255, 255],
+        fontSize: 12,
         fontStyle: "bold",
-        halign: "center", // Center align header
+        halign: "center",
       },
       bodyStyles: {
-        fontSize: 12,
+        fontSize: 11,
         textColor: [0, 0, 0],
-        halign: "center", // Center align body cells
+        halign: "center",
       },
       columnStyles: {
-        0: { halign: "center" }, // Center align the "No." column
-        2: { halign: "center" }, // Center align the "SKS" column
+        0: { halign: "center", cellWidth: 20 },
+        1: { halign: "left", cellWidth: 130 },
+        2: { halign: "center", cellWidth: 30 },
       },
       didDrawPage: function (data) {
         // Draw a footer (page number)
@@ -327,6 +362,12 @@ const Mahasiswa = () => {
         );
       },
     });
+
+    // Display total SKS
+    yOffset = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.setFont("times", "bold");
+    doc.text(`Total SKS: ${totalSKS}`, margin, yOffset);
 
     // Save the generated PDF
     doc.save(`${mahasiswa.nim}_KRS.pdf`);
@@ -383,8 +424,14 @@ const Mahasiswa = () => {
         { method: "DELETE" }
       );
 
+      console.log("Response Status:", response.status);
+
+      // Check if the response has content before parsing it as JSON
       if (response.ok) {
-        alert("KRS deleted successfully!");
+        const responseBody = await response.json();
+        console.log("Response Body:", responseBody);
+
+        toast.success("KRS deleted successfully!");
         setMahasiswaList((prev) =>
           prev.map((mahasiswa) =>
             mahasiswa.id === mahasiswaId
@@ -398,12 +445,13 @@ const Mahasiswa = () => {
           )
         );
       } else {
-        const errorResult = await response.json();
-        alert(errorResult.message || "Failed to delete KRS");
+        const errorResult = await response.text(); // Use text() instead of json() to avoid empty body errors
+        console.error("Server Error:", errorResult);
+        toast.error(errorResult || "Failed to delete KRS. Please try again.");
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while deleting KRS");
+      console.error("Client Error:", error);
+      toast.error("An error occurred while deleting KRS. Please try again.");
     }
   };
 
@@ -560,9 +608,11 @@ const Mahasiswa = () => {
                     <option
                       key={mataKuliah.id}
                       value={mataKuliah.id}
-                      disabled={currentMahasiswa?.krs.some(
-                        (krs) => krs.MataKuliah.id === mataKuliah.id
-                      )}
+                      disabled={
+                        currentMahasiswa?.krs?.some(
+                          (krs) => krs.MataKuliah.id === mataKuliah.id
+                        ) || false
+                      } // Ensure disabled evaluates to a boolean
                     >
                       {mataKuliah.namaMk} ({mataKuliah.sks} SKS)
                     </option>
@@ -675,7 +725,7 @@ const Mahasiswa = () => {
                 </tr>
               </thead>
               <tbody>
-                {selectedMahasiswaForSks.krs.map((krs, index) => (
+                {selectedMahasiswaForSks?.krs?.map((krs, index) => (
                   <tr key={krs.MataKuliah.id}>
                     <td className="border p-3">{index + 1}</td>
                     <td className="border p-3">{krs.MataKuliah.namaMk}</td>
@@ -694,7 +744,13 @@ const Mahasiswa = () => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )) || (
+                  <tr>
+                    <td colSpan="4" className="text-center p-3">
+                      No KRS data available.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             <div className="flex justify-between mt-4">

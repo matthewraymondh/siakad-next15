@@ -54,6 +54,7 @@ const Sidebar = () => {
           <span>Input Mata Kuliah</span>
         </div>
       </Link>
+
       <Link href="/logout">
         <div
           className={`flex items-center space-x-4 p-4 text-lg transition-all duration-300 rounded-md ${

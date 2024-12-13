@@ -7,6 +7,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id        Int     @id @default(autoincrement())
+  username  String  @unique
+  password  String
+  role      String  // Example roles: "superadmin", "admin", "user"
+  createdAt DateTime @default(now())
+}
+
 model Mahasiswa {
   id     Int    @id @default(autoincrement())
   nim    String @unique
@@ -33,6 +41,8 @@ model Krs {
   mahasiswaId  Int
   mataKuliahId Int
 
-  Mahasiswa  Mahasiswa  @relation(fields: [mahasiswaId], references: [id])
-  MataKuliah MataKuliah @relation(fields: [mataKuliahId], references: [id])
+  Mahasiswa  Mahasiswa  @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+  MataKuliah MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+
+  @@unique([mahasiswaId, mataKuliahId])
 }
