@@ -349,7 +349,7 @@ const Mahasiswa = () => {
         1: { halign: "left", cellWidth: 130 },
         2: { halign: "center", cellWidth: 30 },
       },
-      didDrawPage: function (data) {
+      didDrawPage: function () {
         // Draw a footer (page number)
         const pageSize = doc.internal.pageSize;
         const pageHeight = pageSize.height || pageSize.getHeight();
@@ -424,7 +424,7 @@ const Mahasiswa = () => {
       );
 
       if (response.ok) {
-        const responseBody = await response.json();
+        // const responseBody = await response.json();
 
         // Notify success using Sonner
         toast.success("KRS deleted successfully!");
