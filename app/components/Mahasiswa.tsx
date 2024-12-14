@@ -12,6 +12,7 @@ type MataKuliah = {
   kodeMk: string;
   namaMk: string;
   sks: number;
+  ruangan: string;
 };
 
 type Krs = {
@@ -50,6 +51,12 @@ const Mahasiswa = () => {
   const [selectedMahasiswaForCourse, setSelectedMahasiswaForCourse] = useState<
     number | null
   >(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedMahasiswa, setSelectedMahasiswa] = useState<{
+    id: number;
+    nama: string;
+  } | null>(null);
 
   // States for SKS modal
   const [isSksModalOpen, setIsSksModalOpen] = useState(false); // SKS modal visibility
@@ -158,20 +165,27 @@ const Mahasiswa = () => {
   };
 
   // Delete Mahasiswa
-  const handleDeleteMahasiswa = async (mahasiswaId: number) => {
+  const handleDeleteMahasiswa = (
+    mahasiswaId: number,
+    mahasiswaName: string
+  ) => {
+    setSelectedMahasiswa({ id: mahasiswaId, nama: mahasiswaName });
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteMahasiswa = async () => {
+    if (!selectedMahasiswa) return;
+
     try {
-      console.log(`Deleting Mahasiswa ID: ${mahasiswaId}`);
-      const response = await fetch(`/api/mahasiswa/${mahasiswaId}`, {
+      const response = await fetch(`/api/mahasiswa/${selectedMahasiswa.id}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       if (response.ok) {
         const result = await response.json();
         setMahasiswaList((prev) =>
-          prev.filter((mahasiswa) => mahasiswa.id !== mahasiswaId)
+          prev.filter((mahasiswa) => mahasiswa.id !== selectedMahasiswa.id)
         );
         toast.success(result.message || "Mahasiswa deleted successfully!");
       } else {
@@ -181,7 +195,15 @@ const Mahasiswa = () => {
     } catch (error) {
       console.error("Error:", error);
       toast.error("An unexpected error occurred while deleting Mahasiswa.");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSelectedMahasiswa(null);
     }
+  };
+
+  const cancelDeleteMahasiswa = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedMahasiswa(null);
   };
 
   // Add selected courses to Mahasiswa
@@ -231,14 +253,36 @@ const Mahasiswa = () => {
       mahasiswa.krs = []; // Initialize `krs` as an empty array if undefined
     }
 
+    // Get dynamic max SKS value from the mahasiswa object
+    const MAX_SKS = mahasiswa.sksMax || 24; // Default to 24 if `sksMax` is undefined
+
     // Filter out duplicate courses in the frontend
     const existingCourseIds = mahasiswa.krs.map((krs) => krs.MataKuliah.id);
     const uniqueCourses = selectedCourses.filter(
       (course) => !existingCourseIds.includes(course.id)
     );
 
+    // Check if there are no unique courses to add
     if (uniqueCourses.length === 0) {
       toast.info("All selected courses are already assigned to this student.");
+      return;
+    }
+
+    // Calculate the current total SKS for the mahasiswa
+    const currentSKS = mahasiswa.krs.reduce(
+      (total, krs) => total + (krs.MataKuliah.sks || 0),
+      0
+    );
+
+    // Calculate the SKS for the new courses
+    const newCoursesSKS = uniqueCourses.reduce(
+      (total, course) => total + course.sks,
+      0
+    );
+
+    // Check if adding the selected courses exceeds the max SKS
+    if (currentSKS + newCoursesSKS > MAX_SKS) {
+      toast.error(`Cannot add courses. SKS quota of ${MAX_SKS} reached.`);
       return;
     }
 
@@ -315,13 +359,14 @@ const Mahasiswa = () => {
       0
     );
 
-    // Table Body using autoTable
+    // Table Body using autoTable, now including ruangan column
     doc.autoTable({
       startY: yOffset,
-      head: [["No.", "Course Name", "SKS"]],
+      head: [["No.", "Course Name", "Ruangan", "SKS"]], // Add 'Ruangan' header
       body: mahasiswa.krs.map((krs, index) => [
         index + 1,
         krs.MataKuliah.namaMk,
+        krs.MataKuliah.ruangan, // Include ruangan value
         krs.MataKuliah.sks,
       ]),
       margin: { left: margin, right: margin },
@@ -346,19 +391,34 @@ const Mahasiswa = () => {
       },
       columnStyles: {
         0: { halign: "center", cellWidth: 20 },
-        1: { halign: "left", cellWidth: 130 },
-        2: { halign: "center", cellWidth: 30 },
+        1: { halign: "left", cellWidth: 90 },
+        2: { halign: "center", cellWidth: 40 },
+        3: { halign: "center", cellWidth: 30 }, // Adjust column width for ruangan
       },
       didDrawPage: function () {
         // Draw a footer (page number)
         const pageSize = doc.internal.pageSize;
         const pageHeight = pageSize.height || pageSize.getHeight();
+        const pageWidth = pageSize.width || pageSize.getWidth();
+
+        // Draw a footer
         doc.setFontSize(10);
         doc.text(
           `Page ${doc.internal.getNumberOfPages()}`,
           margin,
-          pageHeight - 10
+          pageHeight - 15
         );
+        doc.setFontSize(8);
+        doc.text("SISTEM KRS BY MATTHEW RAYMOND", 105, pageHeight - 10, {
+          align: "center",
+        });
+
+        // Add date and time on the right
+        const date = new Date();
+        const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+        doc.text(formattedDate, pageWidth - margin, pageHeight - 10, {
+          align: "right",
+        });
       },
     });
 
@@ -701,12 +761,15 @@ const Mahasiswa = () => {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDeleteMahasiswa(mahasiswa.id)}
+                  onClick={() =>
+                    handleDeleteMahasiswa(mahasiswa.id, mahasiswa.nama)
+                  } // Pass ID and Name
                   className="bg-red-500 text-white px-4 py-2 rounded-lg"
                   key={`delete-${mahasiswa.id}`} // Unique key for Delete button
                 >
                   Delete
                 </button>
+
                 <button
                   onClick={() => openCourseModal(mahasiswa.id)}
                   className="bg-blue-500 text-white px-4 py-2 rounded-lg ml-2"
@@ -727,10 +790,34 @@ const Mahasiswa = () => {
         </tbody>
       </table>
 
+      {isDeleteModalOpen && selectedMahasiswa && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-96">
+            <h2 className="text-xl font-bold mb-4">
+              Are you sure you want to delete {selectedMahasiswa.nama}?
+            </h2>
+            <div className="flex justify-between">
+              <button
+                onClick={cancelDeleteMahasiswa}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteMahasiswa}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SKS Modal (Pop-up) */}
       {isSksModalOpen && selectedMahasiswaForSks && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-md w-96">
+          <div className="bg-white p-6 rounded-lg shadow-md w-106">
             <h2 className="text-xl font-bold mb-4">
               SKS Details for {selectedMahasiswaForSks.nama}
             </h2>
@@ -740,6 +827,7 @@ const Mahasiswa = () => {
                   <th className="border p-3">No</th>
                   <th className="border p-3">Course Name</th>
                   <th className="border p-3">SKS</th>
+                  <th className="border p-3">Ruang</th>
                   <th className="border p-3">Actions</th>
                 </tr>
               </thead>
@@ -749,6 +837,7 @@ const Mahasiswa = () => {
                     <td className="border p-3">{index + 1}</td>
                     <td className="border p-3">{krs.MataKuliah.namaMk}</td>
                     <td className="border p-3">{krs.MataKuliah.sks}</td>
+                    <td className="border p-3">{krs.MataKuliah.ruangan}</td>
                     <td className="border p-3">
                       <button
                         onClick={() =>

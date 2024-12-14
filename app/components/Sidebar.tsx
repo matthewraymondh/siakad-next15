@@ -11,7 +11,7 @@ const Sidebar = () => {
 
   // Update the active state based on the current route
   useEffect(() => {
-    if (pathname === "/") {
+    if (pathname === "/dashboard") {
       setActive("input-mahasiswa");
     } else if (pathname === "/input-mata-kuliah") {
       setActive("input-mata-kuliah");
@@ -21,7 +21,7 @@ const Sidebar = () => {
   }, [pathname]); // Re-run the effect whenever the pathname changes
 
   return (
-    <div className="w-64 h-screen bg-congress-blue-200 shadow-lg rounded-md p-4 space-y-6">
+    <div className="w-64 bg-congress-blue-200 shadow-lg rounded-md p-4 space-y-6 sticky top-0 h-screen">
       {/* College Logo and Name */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="w-10 h-10 bg-gray-200 rounded-full"></div>{" "}
@@ -30,7 +30,7 @@ const Sidebar = () => {
       </div>
 
       {/* Sidebar Menu */}
-      <Link href="/">
+      <Link href="/dashboard">
         <div
           className={`flex items-center space-x-4 p-4 text-lg transition-all duration-300 rounded-md ${
             active === "input-mahasiswa"

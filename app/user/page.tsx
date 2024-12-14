@@ -1,11 +1,17 @@
+import type { Metadata } from "next";
+import UserTable from "../components/user-table";
+import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
-import Footer from "../components/Footer";
-import MataKuliahForm from "../components/MataKuliahForm";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { SessionProvider } from "next-auth/react";
+import Footer from "../components/Footer";
 
-const Layout = () => {
+export const metadata: Metadata = {
+  title: "User List",
+  description: "List of all users in the system",
+};
+
+const UserPage = () => {
   return (
     <SessionProvider>
       <div className="flex flex-col min-h-screen">
@@ -24,7 +30,12 @@ const Layout = () => {
           {/* Main content */}
           <div className="flex-1 ml-64 pt-17 p-6 overflow-y-auto">
             {/* Main content like MataKuliahForm goes here */}
-            <MataKuliahForm />
+            <div className="bg-slate-50 min-h-screen">
+              <div className="max-w-screen-md mx-auto py-10">
+                <h1 className="text-2xl font-bold">User List</h1>
+                <UserTable />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -35,4 +46,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default UserPage;
