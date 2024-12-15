@@ -33,7 +33,7 @@ export const signUpCredemtials = async (
       },
     });
   } catch (error) {
-    return { message: "failed to create user" };
+    console.error(error);
   }
   redirect("/login");
 };

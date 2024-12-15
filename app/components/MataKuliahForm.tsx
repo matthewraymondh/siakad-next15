@@ -21,7 +21,6 @@ const MataKuliahForm = () => {
   });
 
   const [mataKuliahList, setMataKuliahList] = useState<MataKuliah[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<number | null>(null);
@@ -90,13 +89,11 @@ const MataKuliahForm = () => {
       sks: mataKuliah.sks.toString(),
       ruangan: mataKuliah.ruangan,
     });
-    setIsEditing(true);
     setEditModal(true);
   };
 
   const closeEditModal = () => {
     setFormData({ id: null, kodeMk: "", namaMk: "", sks: "", ruangan: "" });
-    setIsEditing(false);
     setEditModal(false);
   };
 
