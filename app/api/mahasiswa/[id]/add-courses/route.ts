@@ -4,14 +4,29 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: Request, context: { params: { id: string } }) {
+  const { params } = context;
   const mahasiswaId = parseInt(params.id);
-  const { mataKuliahIds } = await req.json();
+
+  if (isNaN(mahasiswaId)) {
+    return new Response(JSON.stringify({ message: "Invalid Mahasiswa ID" }), {
+      status: 400,
+    });
+  }
 
   try {
+    const { mataKuliahIds } = await req.json();
+
+    if (
+      !Array.isArray(mataKuliahIds) ||
+      mataKuliahIds.some((id) => typeof id !== "number")
+    ) {
+      return new Response(
+        JSON.stringify({ message: "Invalid Mata Kuliah IDs" }),
+        { status: 400 }
+      );
+    }
+
     // Check for duplicate courses
     const existingKrs = await prisma.krs.findMany({
       where: {
