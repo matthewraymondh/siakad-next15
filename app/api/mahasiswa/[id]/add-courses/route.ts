@@ -3,13 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-interface Params {
-  id: string;
-}
-
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } } // This is the correct way
+  { params }: { params: { id: string } }
 ) {
   const mahasiswaId = parseInt(params.id, 10);
 
