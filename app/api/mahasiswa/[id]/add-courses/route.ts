@@ -7,8 +7,11 @@ interface Params {
   id: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: Params }) {
-  const mahasiswaId = parseInt(params.id, 10); // Important: Parse with radix
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } } // This is the correct way
+) {
+  const mahasiswaId = parseInt(params.id, 10);
 
   if (isNaN(mahasiswaId)) {
     return NextResponse.json(
@@ -30,7 +33,6 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       );
     }
 
-    // Check for duplicate courses
     const existingKrs = await prisma.krs.findMany({
       where: {
         mahasiswaId,
