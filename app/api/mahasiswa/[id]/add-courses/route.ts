@@ -1,17 +1,19 @@
-// app/api/mahasiswa/[id]/add-courses/route.ts
-
 import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: Request, context: { params: { id: string } }) {
-  const { params } = context;
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const mahasiswaId = parseInt(params.id);
 
   if (isNaN(mahasiswaId)) {
-    return new Response(JSON.stringify({ message: "Invalid Mahasiswa ID" }), {
-      status: 400,
-    });
+    return NextResponse.json(
+      { message: "Invalid Mahasiswa ID" },
+      { status: 400 }
+    );
   }
 
   try {
@@ -21,8 +23,8 @@ export async function POST(req: Request, context: { params: { id: string } }) {
       !Array.isArray(mataKuliahIds) ||
       mataKuliahIds.some((id) => typeof id !== "number")
     ) {
-      return new Response(
-        JSON.stringify({ message: "Invalid Mata Kuliah IDs" }),
+      return NextResponse.json(
+        { message: "Invalid Mata Kuliah IDs" },
         { status: 400 }
       );
     }
@@ -41,10 +43,8 @@ export async function POST(req: Request, context: { params: { id: string } }) {
     );
 
     if (newCourseIds.length === 0) {
-      return new Response(
-        JSON.stringify({
-          message: "All selected courses are already assigned.",
-        }),
+      return NextResponse.json(
+        { message: "All selected courses are already assigned." },
         { status: 400 }
       );
     }
@@ -63,17 +63,20 @@ export async function POST(req: Request, context: { params: { id: string } }) {
       include: { krs: { include: { MataKuliah: true } } },
     });
 
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         message: `Added ${newCourseIds.length} new courses to Mahasiswa.`,
         mahasiswa,
-      }),
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error("Error adding courses:", error);
-    return new Response(
-      JSON.stringify({ message: "Error adding courses", error }),
+    return NextResponse.json(
+      {
+        message: "Error adding courses",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

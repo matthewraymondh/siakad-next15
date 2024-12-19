@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import ActiveUsers from "./components/ActiveUsers";
 
 // Define the fonts
 const geistSans = localFont({
@@ -35,6 +36,7 @@ export default function RootLayout({
         {/* Wrap children with AuthProvider */}
         {children}
       </body>
+      <ActiveUsers />
     </html>
   );
 }
