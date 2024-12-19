@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const mahasiswaId = parseInt(params.id);
+interface Params {
+  id: string;
+}
+
+export async function POST(req: NextRequest, { params }: { params: Params }) {
+  const mahasiswaId = parseInt(params.id, 10); // Important: Parse with radix
 
   if (isNaN(mahasiswaId)) {
     return NextResponse.json(
@@ -49,7 +50,6 @@ export async function POST(
       );
     }
 
-    // Create Krs records for new courses only
     await prisma.krs.createMany({
       data: newCourseIds.map((mataKuliahId: number) => ({
         mahasiswaId,
@@ -57,7 +57,6 @@ export async function POST(
       })),
     });
 
-    // Fetch updated Mahasiswa with new KRS details
     const mahasiswa = await prisma.mahasiswa.findUnique({
       where: { id: mahasiswaId },
       include: { krs: { include: { MataKuliah: true } } },
