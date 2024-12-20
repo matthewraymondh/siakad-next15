@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaUserGraduate, FaBook, FaSignOutAlt } from "react-icons/fa"; // Icons
+import { FaUserGraduate, FaBook } from "react-icons/fa"; // Icons
 import { usePathname } from "next/navigation"; // Import usePathname from next/navigation
 
 const Sidebar = () => {
@@ -55,7 +55,7 @@ const Sidebar = () => {
         </div>
       </Link>
 
-      <Link href="/logout">
+      {/* <Link href="/logout">
         <div
           className={`flex items-center space-x-4 p-4 text-lg transition-all duration-300 rounded-md ${
             active === "logout"
@@ -66,7 +66,7 @@ const Sidebar = () => {
           <FaSignOutAlt className="text-xl" />
           <span>Logout</span>
         </div>
-      </Link>
+      </Link> */}
     </div>
   );
 };
